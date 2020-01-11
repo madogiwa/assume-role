@@ -379,6 +379,7 @@ export-envars() {
     export AWS_ACCOUNT_NAME="$account_name"
     export AWS_ACCOUNT_ROLE="$role"
     export ROLE_SESSION_START="$ROLE_SESSION_START"
+    export ROLE_SESSION_TIMEOUT="$ROLE_SESSION_TIMEOUT"
     export GEO_ENV="$account_name" # For GeoEngineer https://github.com/coinbase/geoengineer
     echo_out "Success! IAM session envars are exported."
   fi
