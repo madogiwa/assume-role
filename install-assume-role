@@ -6,7 +6,7 @@
 #
 # You can run it anywhere by executing:
 #
-#  curl https://raw.githubusercontent.com/coinbase/assume-role/master/install-assume-role | bash
+#  curl https://raw.githubusercontent.com/madogiwa/assume-role/master/install-assume-role | bash
 
 set -euo pipefail
 
@@ -40,4 +40,4 @@ if ! chmod +x $location; then
   sudo chmod +x $location
 fi
 
-$sudo curl -L https://raw.githubusercontent.com/coinbase/assume-role/master/assume-role --output $location
+$sudo curl -L https://raw.githubusercontent.com/madogiwa/assume-role/master/assume-role --output $location
