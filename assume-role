@@ -38,11 +38,6 @@ usage() {
 EOF
 }
 
-if [ $# -eq 0 ] ; then
-    usage;
-    exit 1;
-fi
-
 echo_out() {
   # If this is outputting to an eval statement we need to output a "echo" as well
   if [ -z "$OUTPUT_TO_EVAL" ]; then
@@ -54,6 +49,11 @@ echo_out() {
 }
 
 assume-role(){
+  if [ $# -eq 0 ] ; then
+    usage;
+    return 1;
+  fi
+
   setup "$@" || return 1
 
   if [[ $AWS_ASSUME_ROLE_AUTH_SCHEME == "saml" ]]; then
