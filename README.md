@@ -18,7 +18,7 @@ according to AWS.
 ### via Homebrew (macOS)
 
 ```bash
-brew tap coinbase/assume-role
+brew tap madogiwa/assume-role
 brew install assume-role
 ```
 
