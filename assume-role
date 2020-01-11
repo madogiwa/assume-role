@@ -60,7 +60,7 @@ assume-role(){
     assume-role-with-saml || return 1
   elif [[ $AWS_ASSUME_ROLE_AUTH_SCHEME == "bastion" ]]; then
     if [[ $AWS_ROLE_SESSION_TIMEOUT -gt 3600 ]]; then
-      assume-role-without-session || return 1
+      assume-role-without-long-lived-session || return 1
     else
       assume-role-with-bastion || return 1
     fi
@@ -366,7 +366,7 @@ assume-role-with-bastion() {
   ROLE_SESSION=$(aws sts assume-role "${ROLE_SESSION_ARGS[@]}" || echo "fail")
 }
 
-assume-role-without-session() {
+assume-role-without-long-lived-session() {
   NOW=$(date +"%s")
 
   # We'll need a token
