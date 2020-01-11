@@ -59,7 +59,11 @@ assume-role(){
   if [[ $AWS_ASSUME_ROLE_AUTH_SCHEME == "saml" ]]; then
     assume-role-with-saml || return 1
   elif [[ $AWS_ASSUME_ROLE_AUTH_SCHEME == "bastion" ]]; then
-    assume-role-with-bastion || return 1
+    if [[ $AWS_ROLE_SESSION_TIMEOUT -gt 3600 ]]; then
+      assume-role-without-session || return 1
+    else
+      assume-role-with-bastion || return 1
+    fi
   else
     return 1
   fi
@@ -358,6 +362,58 @@ assume-role-with-bastion() {
   ROLE_SESSION_ARGS+=(--duration-seconds "${ROLE_SESSION_TIMEOUT}")
   ROLE_SESSION_ARGS+=(--role-session-name "${AWS_USERNAME}")
   ROLE_SESSION_ARGS+=(--output json)
+
+  ROLE_SESSION=$(aws sts assume-role "${ROLE_SESSION_ARGS[@]}" || echo "fail")
+}
+
+assume-role-without-session() {
+  NOW=$(date +"%s")
+
+  # We'll need a token
+  if [ -z "$mfa_token_input" ] && [ -z "$OUTPUT_TO_EVAL" ]; then
+    echo -n "MFA Token: "
+    read -r mfa_token
+    echo
+  else
+    mfa_token="$mfa_token_input"
+  fi
+
+  if [ -z "$mfa_token" ]; then
+    echo_out "mfa_token is not defined"
+    return 1
+  fi
+
+  # check if the AWS_USERNAME has been preset
+  if [ -z "$AWS_USERNAME" ]; then
+    # get the username attached to your default creds
+    AWS_USERNAME=$(aws iam get-user --query User.UserName --output text --profile $default_profile)
+  else
+    echo_out "Using AWS_USERNAME: $AWS_USERNAME"
+  fi
+
+  # get MFA device attached to default creds
+  MFA_DEVICE_ARGS=(--user-name "$AWS_USERNAME")
+  MFA_DEVICE_ARGS+=(--query 'MFADevices[0].SerialNumber')
+  MFA_DEVICE_ARGS+=(--output text)
+  MFA_DEVICE_ARGS+=(--profile "${default_profile}")
+  MFA_DEVICE=$(aws iam list-mfa-devices "${MFA_DEVICE_ARGS[@]}")
+  MFA_DEVICE_STATUS=$?
+
+  if [ $MFA_DEVICE_STATUS -ne 0 ]; then
+    echo_out "aws iam list-mfa-devices error"
+    return 1
+  fi
+
+  ROLE_SESSION_START=$NOW
+
+  # call assume-role with MFA
+  ROLE_SESSION_ARGS=(--role-arn arn:aws:iam::"${account_id}":role/"${role}")
+  ROLE_SESSION_ARGS+=(--external-id "${account_id}")
+  ROLE_SESSION_ARGS+=(--duration-seconds "${ROLE_SESSION_TIMEOUT}")
+  ROLE_SESSION_ARGS+=(--role-session-name "$(date +%s)")
+  ROLE_SESSION_ARGS+=(--serial-number "${MFA_DEVICE}")
+  ROLE_SESSION_ARGS+=(--token-code "${mfa_token}")
+  ROLE_SESSION_ARGS+=(--profile "${default_profile}")
 
   ROLE_SESSION=$(aws sts assume-role "${ROLE_SESSION_ARGS[@]}" || echo "fail")
 }
